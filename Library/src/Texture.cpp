@@ -69,10 +69,10 @@ namespace dae
 		uint8_t r, g, b;
 		SDL_GetRGB(m_pSurfacePixels[pixelIndex], m_pSurface->format, &r, &g, &b);
 
-		// Remap the color to the [0, 1] range
-		float normalizedR = r / 255.0f;
+		// Remap the color to the [0, 1] range and swap red and blue
+		float normalizedB = r / 255.0f;
 		float normalizedG = g / 255.0f;
-		float normalizedB = b / 255.0f;
+		float normalizedR = b / 255.0f;
 
 		// Return the sampled color
 		return ColorRGB(normalizedR, normalizedG, normalizedB);

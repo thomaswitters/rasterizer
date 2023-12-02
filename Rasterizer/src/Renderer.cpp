@@ -51,7 +51,8 @@ void Renderer::Render()
 	//Render_W1_Part3();
 	//Render_W1_Part4();
 	//Render_W1_Part5();
-	Render_W2();
+	//Render_W2_Part1();
+	Render_W2_Part2();
 
 	
 		
@@ -83,15 +84,16 @@ void Renderer::VertexTransformationFunction(const std::vector<Vertex>& vertices_
 		vertices_out.emplace_back(Vertex{ transformedVertex , vertexIn.color, vertexIn.uv });
 	}
 }
-void Renderer::VertexTransformationFunction(const std::vector<Mesh>& vertices_in, std::vector<Vertex>& vertices_out) const
+void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Vertex>& vertices_out) const
 {
 	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
 	vertices_out.clear();
 
-	for (const auto& mesh : vertices_in)
+	for (const auto& mesh : mesh_in)
 	{
-		for (const auto& vertexIn : mesh.vertices)
+		for (const auto& mesh_index: mesh.indices)
 		{
+			const auto& vertexIn = mesh.vertices[mesh_index];
 			// Transform the point from world space to camera space
 			Vector3 transformedVertex = m_Camera.viewMatrix.TransformPoint(vertexIn.position);
 
@@ -107,179 +109,125 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& vertices_in
 	}
 }
 
-void Renderer::Render_W2()
+void Renderer::Render_W2_Part2()
 {
 
 	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
 	SDL_FillRect(m_pBackBuffer, nullptr, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 
-	///*std::vector<Mesh> meshes
-	//{
-	//	Mesh{
-	//		{
-	//			Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
-	//			Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
-	//			Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
-	//			Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
-	//			Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
-	//			Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
-	//			Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
-	//			Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
-	//			Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
-	//		},
-	//			{
-	//			3, 0, 4, 1, 5, 2,
-	//			2, 6,
-	//			6, 3, 7, 4, 8, 5
-	//		},
-	//		PrimitiveTopology::TriangleStrip
-	//	}
-	//};*/
-
-	std::vector<Vertex> vertices_world1
+	std::vector<Mesh> meshes1
 	{
-		//triagle 0
-		/*3*/{{-3.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
-		/*0*/{{-3.f, 3.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
-		/*4*/{{0.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
+		Mesh{
+			{
+				Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
+				Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
+				Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
+				Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
+				Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
+				Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
+				Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
+				Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
+				Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
+			},
+				{
+				3, 0, 4, 1, 5, 2,
+				2, 6,
+				6, 3, 7, 4, 8, 5
+			},
+			PrimitiveTopology::TriangleStrip
+		}
+	};
+	std::vector<Mesh> meshes2
+	{
+		Mesh{
+				{
+				Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
+				Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
+				Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
+				Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
+				Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
+				Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
+				Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
+				Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
+				Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
+			},
+				{
+				3, 0, 1,	1, 4, 3,	4, 1, 2,
+				2, 5, 4,	6, 3, 4,	4, 7, 6,
+				7, 4, 5,	5, 8, 7
 
-		//triagle 1
-		/*0*/{{-3.f, 3.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
-		/*1*/{{0.f, 3.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
-		/*4*/{{0.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
-
-
-		//triagle 2
-		/*4*/{{0.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
-		/*1*/{{0.f, 3.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
-		/*5*/{{3.f, 0.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}},
-
-		//triagle 3
-		/*1*/{{0.f, 3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}},
-		/*2*/{{3.f, 3.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.5f}},
-		/*5*/{{3.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}},
-
-		//triagle 4
-		/*6*/{{-3.f, -3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 1.f}},
-		/*3*/{{-3.f, 0.f,-2.f}, {0.f, 1.f, 0.f}, {0.5f, 1.f}},
-		/*7*/{{0.f, -3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
-
-		//triagle 5
-		/*3*/{{-3.f, 0.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.f}},
-		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
-		/*7*/{{0.f, -3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
-
-
-		//triagle 6
-		/*7*/{{0.f, -3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
-		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
-		/*8*/{{3.f, -3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}},
-		
-
-		//triagle 7
-		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
-		/*5*/{{3.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}},
-		/*8*/ {{3.f, -3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}}
+			},
+			PrimitiveTopology::TriangleList
+		}
 	};
 
-	std::vector<Vertex> vertices_world2
-	{
-		/*3*/{{-3.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
 
-		/*0*/{{-3.f, 3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
-		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
-		/*1*/{{0.f, 3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}},
-
-		/*5*/{{3.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}},
-		/*2*/{{3.f, 3.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.5f}},
-
-		/*2*/{{3.f, 3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 1.f}},
-		/*6*/{{-3.f, -3.f,-2.f}, {0.f, 1.f, 0.f}, {0.5f, 1.f}},
-
-		/*6*/{{-3.f, -3.f,-2.f}, {0.f, 0.f, 1.f}, {1.f, 1.f}},
-		/*3*/{{-3.f, 0.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.f}},
-		/*7*/{{0.f, -3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
-
-		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
-		/*8*/{{3.f, -3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}},
-		/*5*/{{3.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}}
-	};
-
-	std::vector<Vertex> vertices_world = vertices_world1;
-	PrimitiveTopology method = PrimitiveTopology::TriangleList;
-
-	
-	/*std::vector<Vertex> vertices_world = vertices_world2;
-	PrimitiveTopology method = PrimitiveTopology::TriangleStrip;*/
-	
+	// decide which one to use
+	std::vector<Mesh> meshes = meshes2;
 
 	std::vector<Vertex> vertices_projected;
-	VertexTransformationFunction(vertices_world, vertices_projected);
+	VertexTransformationFunction(meshes, vertices_projected);
 
-	int step = (method == PrimitiveTopology::TriangleList) ? 3 : 1;
-	int sizeDecrease = std::abs(step - 3); // for TriangleString I've noticed I need decrease looping over the vertices_projected.size by 2
+	for (auto mesh : meshes) {
+		PrimitiveTopology method = mesh.primitiveTopology;
+		int step = (method == PrimitiveTopology::TriangleList) ? 3 : 1;
+		int sizeDecrease = std::abs(step - 3); // for TriangleString I've noticed I need decrease looping over the vertices_projected.size by 2
 
-	for (size_t i = 0; i < vertices_projected.size() - sizeDecrease; i += step)
-	{
-		Vector2 v0(((vertices_projected[i].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i].position.y) / 2) * m_Height);
-		Vector2 v1(((vertices_projected[i + 1].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 1].position.y) / 2) * m_Height);
-		Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
-
-		 //TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
-		/*if (meshes[0].primitiveTopology == PrimitiveTopology::TriangleStrip && i % 2 != 0)
+		for (size_t i = 0; i < vertices_projected.size() - sizeDecrease; i += step)
 		{
-			std::swap(v1, v2);
-		}*/
+			Vector2 v0(((vertices_projected[i].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i].position.y) / 2) * m_Height);
+			Vector2 v1(((vertices_projected[i + 1].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 1].position.y) / 2) * m_Height);
+			Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
 
-		int min_x = static_cast<int>(std::min({ v0.x, v1.x, v2.x }));
-		int min_y = static_cast<int>(std::min({ v0.y, v1.y, v2.y }));
-		int max_x = static_cast<int>(std::max({ v0.x, v1.x, v2.x }));
-		int max_y = static_cast<int>(std::max({ v0.y, v1.y, v2.y }));
-
-		// Ensure bounding box is within screen boundaries
-		min_x = std::max(0, std::min(min_x, m_Width - 1));
-		min_y = std::max(0, std::min(min_y, m_Height - 1));
-		max_x = std::max(0, std::min(max_x, m_Width - 1));
-		max_y = std::max(0, std::min(max_y, m_Height - 1));
-
-		for (int px = min_x; px <= max_x; ++px)
-		{
-			for (int py = min_y; py <= max_y; ++py)
+			//TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
+			/*if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip && i % 2 != 0)
 			{
-				Vector2 point(px + 0.5f, py + 0.5f);
+				std::swap(v1, v2);
+			}*/
 
-				ColorRGB finalColor{ 0, 0, 0 };
+			int min_x = static_cast<int>(std::min({ v0.x, v1.x, v2.x }));
+			int min_y = static_cast<int>(std::min({ v0.y, v1.y, v2.y }));
+			int max_x = static_cast<int>(std::max({ v0.x, v1.x, v2.x }));
+			int max_y = static_cast<int>(std::max({ v0.y, v1.y, v2.y }));
 
-				float cross1 = Vector2::Cross(v1 - v0, point - v0);
-				float cross2 = Vector2::Cross(v2 - v1, point - v1);
-				float cross3 = Vector2::Cross(v0 - v2, point - v2);
-				float total = cross1 + cross2 + cross3;
+			// Ensure bounding box is within screen boundaries
+			min_x = std::max(0, std::min(min_x, m_Width - 1));
+			min_y = std::max(0, std::min(min_y, m_Height - 1));
+			max_x = std::max(0, std::min(max_x, m_Width - 1));
+			max_y = std::max(0, std::min(max_y, m_Height - 1));
 
-				cross1 /= total;
-				cross2 /= total;
-				cross3 /= total;
-
-				if ((cross1 >= 0.0f) == (cross2 >= 0.0f) && (cross2 >= 0.0f) == (cross3 >= 0.0f))
+			for (int px = min_x; px <= max_x; ++px)
+			{
+				for (int py = min_y; py <= max_y; ++py)
 				{
-					float depth = cross1 * vertices_projected[i].position.z +
-						cross2 * vertices_projected[i + 1].position.z +
-						cross3 * vertices_projected[i + 2].position.z;
+					Vector2 point(px + 0.5f, py + 0.5f);
 
-					// Depth test
-					if (depth < m_pDepthBufferPixels[px + (py * m_Width)])
+					ColorRGB finalColor{ 0, 0, 0 };
+
+					float cross1 = Vector2::Cross(v1 - v0, point - v0);
+					float cross2 = Vector2::Cross(v2 - v1, point - v1);
+					float cross3 = Vector2::Cross(v0 - v2, point - v2);
+					float total = cross1 + cross2 + cross3;
+
+					cross1 /= total;
+					cross2 /= total;
+					cross3 /= total;
+
+					if ((cross1 >= 0.0f) == (cross2 >= 0.0f) && (cross2 >= 0.0f) == (cross3 >= 0.0f))
 					{
-						// Update depth buffer and render pixel
-						m_pDepthBufferPixels[px + (py * m_Width)] = depth;
+						float Zinterpolated = 1.0f / ((1 / vertices_projected[i].position.z) * cross2 +
+							(1 / vertices_projected[i + 1].position.z) * cross3 +
+							(1 / vertices_projected[i + 2].position.z) * cross1);
 
-						Vector2 uv = vertices_projected[i].uv * cross1 +
-							vertices_projected[i + 1].uv * cross2 +
-							vertices_projected[i + 2].uv * cross3;
+						m_pDepthBufferPixels[px + (py * m_Width)] = Zinterpolated;
 
-						 ColorRGB textureColor = texture->Sample(uv);
+						Vector2 uv = ((vertices_projected[i].uv / vertices_projected[i].position.z) * cross2 +
+							(vertices_projected[i + 1].uv / vertices_projected[i + 1].position.z) * cross3 +
+							(vertices_projected[i + 2].uv / vertices_projected[i + 2].position.z) * cross1) * Zinterpolated;
 
-						finalColor =/* textureColor*/(vertices_projected[i].color * cross2 +
-							vertices_projected[i + 1].color * cross3 +
-							vertices_projected[i + 2].color * cross1);
+						ColorRGB textureColor = texture->Sample(uv);
+
+						finalColor = textureColor * (ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } *cross2 + ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } *cross3 + ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } *cross1);
 
 						finalColor.MaxToOne();
 
@@ -287,6 +235,147 @@ void Renderer::Render_W2()
 							static_cast<uint8_t>(finalColor.r * 255),
 							static_cast<uint8_t>(finalColor.g * 255),
 							static_cast<uint8_t>(finalColor.b * 255));
+					}
+				}
+			}
+		}
+	}
+}
+void Renderer::Render_W2_Part1()
+{
+
+	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
+	SDL_FillRect(m_pBackBuffer, nullptr, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
+
+	std::vector<Mesh> meshes1
+	{
+		Mesh{
+			{
+				Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
+				Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
+				Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
+				Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
+				Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
+				Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
+				Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
+				Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
+				Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
+			},
+				{
+				3, 0, 4, 1, 5, 2,
+				2, 6,
+				6, 3, 7, 4, 8, 5
+			},
+			PrimitiveTopology::TriangleStrip
+		}
+	};
+	std::vector<Mesh> meshes2
+	{
+		Mesh{
+				{
+				Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
+				Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
+				Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
+				Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
+				Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
+				Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
+				Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
+				Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
+				Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
+			},
+				{
+				3, 0, 1,	1, 4, 3,	4, 1, 2,
+				2, 5, 4,	6, 3, 4,	4, 7, 6,
+				7, 4, 5,	5, 8, 7
+
+			},
+			PrimitiveTopology::TriangleList
+		}
+	};
+
+
+	// decide which one to use
+	std::vector<Mesh> meshes = meshes2;
+
+	std::vector<Vertex> vertices_projected;
+	VertexTransformationFunction(meshes, vertices_projected);
+
+	for (auto mesh : meshes) {
+		PrimitiveTopology method = mesh.primitiveTopology;
+		int step = (method == PrimitiveTopology::TriangleList) ? 3 : 1;
+		int sizeDecrease = std::abs(step - 3); // for TriangleString I've noticed I need decrease looping over the vertices_projected.size by 2
+
+		for (size_t i = 0; i < vertices_projected.size() - sizeDecrease; i += step)
+		{
+			Vector2 v0(((vertices_projected[i].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i].position.y) / 2) * m_Height);
+			Vector2 v1(((vertices_projected[i + 1].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 1].position.y) / 2) * m_Height);
+			Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
+
+			//TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
+			/*if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip && i % 2 != 0)
+			{
+				std::swap(v1, v2);
+			}*/
+
+			int min_x = static_cast<int>(std::min({ v0.x, v1.x, v2.x }));
+			int min_y = static_cast<int>(std::min({ v0.y, v1.y, v2.y }));
+			int max_x = static_cast<int>(std::max({ v0.x, v1.x, v2.x }));
+			int max_y = static_cast<int>(std::max({ v0.y, v1.y, v2.y }));
+
+			// Ensure bounding box is within screen boundaries
+			min_x = std::max(0, std::min(min_x, m_Width - 1));
+			min_y = std::max(0, std::min(min_y, m_Height - 1));
+			max_x = std::max(0, std::min(max_x, m_Width - 1));
+			max_y = std::max(0, std::min(max_y, m_Height - 1));
+
+			for (int px = min_x; px <= max_x; ++px)
+			{
+				for (int py = min_y; py <= max_y; ++py)
+				{
+					Vector2 point(px + 0.5f, py + 0.5f);
+
+					ColorRGB finalColor{ 0, 0, 0 };
+
+					float cross1 = Vector2::Cross(v1 - v0, point - v0);
+					float cross2 = Vector2::Cross(v2 - v1, point - v1);
+					float cross3 = Vector2::Cross(v0 - v2, point - v2);
+					float total = cross1 + cross2 + cross3;
+
+					cross1 /= total;
+					cross2 /= total;
+					cross3 /= total;
+
+					if ((cross1 >= 0.0f) == (cross2 >= 0.0f) && (cross2 >= 0.0f) == (cross3 >= 0.0f))
+					{
+						float depth = cross2 * vertices_projected[i].position.z +
+							cross3 * vertices_projected[i + 1].position.z +
+							cross1 * vertices_projected[i + 2].position.z;
+
+						if (depth < m_pDepthBufferPixels[px + (py * m_Width)])
+						{
+							m_pDepthBufferPixels[px + (py * m_Width)] = depth;
+
+							Vector2 uv = vertices_projected[i].uv * cross2 +
+								vertices_projected[i + 1].uv * cross3 +
+								vertices_projected[i + 2].uv * cross1;
+
+							ColorRGB textureColor = texture->Sample(uv);
+
+							finalColor = textureColor 
+								* 
+							(ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } * cross2
+								+
+							ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } * cross3
+								+
+							ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } * cross1);
+
+							finalColor.MaxToOne();
+
+							m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
+								static_cast<uint8_t>(finalColor.r * 255),
+								static_cast<uint8_t>(finalColor.g * 255),
+								static_cast<uint8_t>(finalColor.b * 255));
+						}
 					}
 				}
 			}
@@ -352,9 +441,9 @@ void Renderer::Render_W1_Part5()
 
 				if ((cross1 >= 0.0f) == (cross2 >= 0.0f) && (cross2 >= 0.0f) == (cross3 >= 0.0f))
 				{
-					float depth = vertices_projected[triangleIndex].position.z * cross2 +
-						vertices_projected[triangleIndex + 1].position.z * cross3 +
-						vertices_projected[triangleIndex + 2].position.z * cross1;
+					float depth = vertices_projected[triangleIndex].position.z * cross1 +
+						vertices_projected[triangleIndex + 1].position.z * cross2 +
+						vertices_projected[triangleIndex + 2].position.z * cross3;
 
 
 					// Depth test
@@ -385,7 +474,6 @@ void Renderer::Render_W1_Part5()
 		}
 	}
 }
-
 void Renderer::Render_W1_Part4()
 {
 
@@ -478,7 +566,6 @@ void Renderer::Render_W1_Part4()
 		}
 	}
 }
-
 void Renderer::Render_W1_Part3()
 {
 	std::vector<Vertex> vertices_world
@@ -542,7 +629,6 @@ void Renderer::Render_W1_Part3()
 		}
 	}
 }
-
 void Renderer::Render_W1_Part2()
 {
 	std::vector<Vertex> vertices_world
@@ -595,7 +681,6 @@ void Renderer::Render_W1_Part2()
 		}
 	}
 }
-
 void Renderer::Render_W1_Part1() 
 {
 	std::vector<Vector3> vertices_ndc

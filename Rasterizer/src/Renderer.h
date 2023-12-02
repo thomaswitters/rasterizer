@@ -33,7 +33,7 @@ namespace dae
 		bool SaveBufferToImage() const;
 
 		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const;
-		void VertexTransformationFunction(const std::vector<Mesh>& vertices_in, std::vector<Vertex>& vertices_out) const;
+		void VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Vertex>& vertices_out) const;
 
 		void Render_W1_Part1();
 		void Render_W1_Part2();
@@ -41,7 +41,8 @@ namespace dae
 		void Render_W1_Part4();
 		void Render_W1_Part5();
 
-		void Render_W2();
+		void Render_W2_Part1();
+		void Render_W2_Part2();
 
 	private:
 		SDL_Window* m_pWindow{};
