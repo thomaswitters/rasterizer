@@ -31,6 +31,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 Renderer::~Renderer()
 {
 	delete[] m_pDepthBufferPixels;
+	delete texture;
 }
 
 void Renderer::Update(Timer* pTimer)
@@ -112,30 +113,76 @@ void Renderer::Render_W2()
 	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
 	SDL_FillRect(m_pBackBuffer, nullptr, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 
-	std::vector<Mesh> meshes
+	///*std::vector<Mesh> meshes
+	//{
+	//	Mesh{
+	//		{
+	//			Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
+	//			Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
+	//			Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
+	//			Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
+	//			Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
+	//			Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
+	//			Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
+	//			Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
+	//			Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
+	//		},
+	//			{
+	//			3, 0, 4, 1, 5, 2,
+	//			2, 6,
+	//			6, 3, 7, 4, 8, 5
+	//		},
+	//		PrimitiveTopology::TriangleStrip
+	//	}
+	//};*/
+
+	std::vector<Vertex> vertices_world1
 	{
-		Mesh{
-			{
-				Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
-				Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
-				Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
-				Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
-				Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
-				Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
-				Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
-				Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
-				Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
-			},
-				{
-				3, 0, 4, 1, 5, 2,
-				2, 6,
-				6, 3, 7, 4, 8, 5
-			},
-			PrimitiveTopology::TriangleStrip
-		}
+		//triagle 0
+		/*3*/{{-3.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
+		/*0*/{{-3.f, 3.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
+		/*4*/{{0.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
+
+		//triagle 1
+		/*0*/{{-3.f, 3.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
+		/*1*/{{0.f, 3.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
+		/*4*/{{0.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
+
+
+		//triagle 2
+		/*4*/{{0.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
+		/*1*/{{0.f, 3.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
+		/*5*/{{3.f, 0.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}},
+
+		//triagle 3
+		/*1*/{{0.f, 3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}},
+		/*2*/{{3.f, 3.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.5f}},
+		/*5*/{{3.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}},
+
+		//triagle 4
+		/*6*/{{-3.f, -3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 1.f}},
+		/*3*/{{-3.f, 0.f,-2.f}, {0.f, 1.f, 0.f}, {0.5f, 1.f}},
+		/*7*/{{0.f, -3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
+
+		//triagle 5
+		/*3*/{{-3.f, 0.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.f}},
+		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
+		/*7*/{{0.f, -3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
+
+
+		//triagle 6
+		/*7*/{{0.f, -3.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.f}},
+		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
+		/*8*/{{3.f, -3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}},
+		
+
+		//triagle 7
+		/*4*/{{0.f, 0.f, -2.f}, {0.f, 0.f, 1.f}, {1.f, 0.f}},
+		/*5*/{{3.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}},
+		/*8*/ {{3.f, -3.f, -2.f}, {1.f, 0.f, 0.f}, {0.f, 0.5f}}
 	};
 
-	std::vector<Vertex> vertices_world
+	std::vector<Vertex> vertices_world2
 	{
 		/*3*/{{-3.f, 0.f, -2.f}, {1.f,0.f,0.f}, {0.f, 0.f}},
 
@@ -158,20 +205,31 @@ void Renderer::Render_W2()
 		/*5*/{{3.f, 0.f, -2.f}, {0.f, 1.f, 0.f}, {0.5f, 0.5f}}
 	};
 
+	std::vector<Vertex> vertices_world = vertices_world1;
+	PrimitiveTopology method = PrimitiveTopology::TriangleList;
+
+	
+	/*std::vector<Vertex> vertices_world = vertices_world2;
+	PrimitiveTopology method = PrimitiveTopology::TriangleStrip;*/
+	
+
 	std::vector<Vertex> vertices_projected;
 	VertexTransformationFunction(vertices_world, vertices_projected);
 
-	for (size_t i = 0; i < vertices_projected.size() - 2; i++)
+	int step = (method == PrimitiveTopology::TriangleList) ? 3 : 1;
+	int sizeDecrease = std::abs(step - 3); // for TriangleString I've noticed I need decrease looping over the vertices_projected.size by 2
+
+	for (size_t i = 0; i < vertices_projected.size() - sizeDecrease; i += step)
 	{
 		Vector2 v0(((vertices_projected[i].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i].position.y) / 2) * m_Height);
 		Vector2 v1(((vertices_projected[i + 1].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 1].position.y) / 2) * m_Height);
 		Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
 
 		 //TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
-		if (meshes[0].primitiveTopology == PrimitiveTopology::TriangleStrip && i % 2 != 0)
+		/*if (meshes[0].primitiveTopology == PrimitiveTopology::TriangleStrip && i % 2 != 0)
 		{
 			std::swap(v1, v2);
-		}
+		}*/
 
 		int min_x = static_cast<int>(std::min({ v0.x, v1.x, v2.x }));
 		int min_y = static_cast<int>(std::min({ v0.y, v1.y, v2.y }));
