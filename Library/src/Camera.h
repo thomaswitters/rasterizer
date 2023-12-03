@@ -18,7 +18,6 @@ namespace dae
 		{
 		}
 
-
 		Vector3 origin{};
 		float fovAngle{90.f};
 		float fov{ tanf((fovAngle * TO_RADIANS) / 2.f) };
@@ -32,6 +31,13 @@ namespace dae
 
 		Matrix invViewMatrix{};
 		Matrix viewMatrix{};
+
+		Matrix projectionMatrix{};
+		
+		Vector3 scale{ 1.0f, 1.0f, 1.0f };
+		Matrix worldMatrix{};
+
+
 
 		void Initialize(float _fovAngle = 90.f, Vector3 _origin = {0.f,0.f,0.f})
 		{
@@ -56,11 +62,19 @@ namespace dae
 		void CalculateProjectionMatrix()
 		{
 			//TODO W3
-
 			//ProjectionMatrix => Matrix::CreatePerspectiveFovLH(...) [not implemented yet]
 			//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixperspectivefovlh
-		}
 
+			float aspect = static_cast<float>(800.f) / static_cast<float>(800.f);
+
+			float zn = 1.0f;
+			float zf = 1000.0f;
+
+			projectionMatrix = Matrix::CreatePerspectiveFovLH(fov, aspect, zn, zf);
+		}
+		
+		
+		
 		void Update(Timer* pTimer)
 		{
 			Matrix rotationY = Matrix::CreateRotationY(totalYaw);
@@ -69,6 +83,13 @@ namespace dae
 			Matrix finalRotation = rotationX * rotationY;
 			forward = finalRotation.TransformVector(Vector3::UnitZ);
 			forward.Normalized();
+
+			Vector3 localRight = Vector3::Cross(up, forward);
+			localRight.Normalized();
+
+			/*Vector3 localUp = Vector3::Cross(forward, localRight);
+			localUp.Normalized();*/
+			worldMatrix = Matrix::CreateTranslation(origin);
 
 			const float deltaTime = pTimer->GetElapsed();
 
@@ -81,8 +102,7 @@ namespace dae
 			int mouseX{}, mouseY{};
 			const uint32_t mouseState = SDL_GetRelativeMouseState(&mouseX, &mouseY);
 
-			Vector3 localRight = Vector3::Cross(up, forward);
-			localRight.Normalized();
+			
 
 			//todo: W2
 			if (pKeyboardState[SDL_SCANCODE_W])
@@ -108,7 +128,7 @@ namespace dae
 			if (SDL_BUTTON_LMASK == mouseState)
 			{
 				origin -= forward * float(mouseY) * deltaTime * 2.f;
-				totalYaw += float(mouseX) * deltaTime / 2;
+				totalYaw += float(mouseX) * deltaTime;
 			}
 			if (SDL_BUTTON_RMASK == mouseState)
 			{

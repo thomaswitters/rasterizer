@@ -30,14 +30,6 @@ namespace dae
 		// Load image using SDL_image
 		SDL_Surface* loadedSurface = IMG_Load(path.c_str());
 
-		// Check if the image loaded successfully
-		//if (!loadedSurface)
-		//{
-		//	// Handle the error, for example, print an error message
-		//	std::cerr << "Failed to load image: " << SDL_GetError() << std::endl;
-		//	return nullptr; // or return a default texture
-		//}
-
 		return new Texture (loadedSurface);
 	}
 
@@ -50,31 +42,24 @@ namespace dae
 		//Texture::Sample > Samples a specific pixel from the SurfacePixels 
 		//m_pSurfacePixels
 	
-		// Get the width and height of the texture
 		int texWidth = m_pSurface->w;
 		int texHeight = m_pSurface->h;
 
-		// Map UV coordinates to pixel coordinates
 		int pixelX = static_cast<int>(uv.x * texWidth);
 		int pixelY = static_cast<int>(uv.y * texHeight);
 
-		// Ensure that pixelX and pixelY are within valid bounds
 		pixelX = std::max(0, std::min(texWidth - 1, pixelX));
 		pixelY = std::max(0, std::min(texHeight - 1, pixelY));
 
-		// Calculate the index of the pixel in the 1D array
 		int pixelIndex = pixelY * texWidth + pixelX;
 
-		// Read the color from the pixel using SDL_GetRGB
 		uint8_t r, g, b;
 		SDL_GetRGB(m_pSurfacePixels[pixelIndex], m_pSurface->format, &r, &g, &b);
 
-		// Remap the color to the [0, 1] range and swap red and blue
 		float normalizedB = r / 255.0f;
 		float normalizedG = g / 255.0f;
 		float normalizedR = b / 255.0f;
 
-		// Return the sampled color
 		return ColorRGB(normalizedR, normalizedG, normalizedB);
 	}
 }

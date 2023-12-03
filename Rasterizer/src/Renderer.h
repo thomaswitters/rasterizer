@@ -44,6 +44,8 @@ namespace dae
 		void Render_W2_Part1();
 		void Render_W2_Part2();
 
+		void Render_W3();
+
 	private:
 		SDL_Window* m_pWindow{};
 
