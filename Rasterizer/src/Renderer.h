@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Camera.h"
+#include <iostream>
 
 struct SDL_Window;
 struct SDL_Surface;
@@ -51,6 +52,15 @@ namespace dae
 		void Render_W3();
 		void Render_W3_Part2();
 
+		void Render_W4();
+
+		float Remap(float value, float oldMin, float oldMax);
+
+		void ChangeRenderColor()
+		{
+			renderFinalColor = !renderFinalColor;
+		}
+
 	private:
 		SDL_Window* m_pWindow{};
 
@@ -65,10 +75,15 @@ namespace dae
 		int m_Width{};
 		int m_Height{};
 
-		Texture* texture;
+		Texture* textureUvGrid;
+		Texture* textureTukTuk;
+		Texture* textureVehicle;
 
-		std::vector<Mesh> meshes3;
+		std::vector<Mesh> tuktuk;
+		std::vector<Mesh> vehicle;
 
 		float draai;
+
+		bool renderFinalColor = true;
 	};
 }
