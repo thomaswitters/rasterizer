@@ -73,8 +73,8 @@ void Renderer::Render()
 	//Render_W1_Part5();
 	//Render_W2_Part1();
 	//Render_W2_Part2();
-	Render_W3();
-	//Render_W3_Part2();
+	//Render_W3();
+	Render_W3_Part2();
 	
 		
 
@@ -191,7 +191,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 			homogeneousVertex.x /= homogeneousVertex.w;
 			homogeneousVertex.y /= homogeneousVertex.w;
 			homogeneousVertex.z /= homogeneousVertex.w;
-			homogeneousVertex.w = homogeneousVertex.w;
+			homogeneousVertex.w = homogeneousVertex.z;
 
 			vertices_out.emplace_back(Vertex_Out{ homogeneousVertex, vertexIn.color, vertexIn.uv });
 		}
@@ -303,26 +303,34 @@ void Renderer::Render_W3_Part2()
 
 					if ((cross1 >= 0.0f) == (cross2 >= 0.0f) && (cross2 >= 0.0f) == (cross3 >= 0.0f))
 					{
-						float Zinterpolated = 1.0f / ((1 / vertices_projected[i].position.z) * cross2 +
-							(1 / vertices_projected[i + 1].position.z) * cross3 +
-							(1 / vertices_projected[i + 2].position.z) * cross1);
+
+						float Winterpolated = 1.0f / ((1 / vertices_projected[i].position.w) * cross2 +
+							(1 / vertices_projected[i + 1].position.w) * cross3 +
+							(1 / vertices_projected[i + 2].position.w) * cross1);
 						
-						m_pDepthBufferPixels[px + (py * m_Width)] = Zinterpolated;
+						Winterpolated = std::max(0.0f, std::min(1.0f, Winterpolated));
 
-						Vector2 uv = ((vertices_projected[i].uv / vertices_projected[i].position.z) * cross2 +
-							(vertices_projected[i + 1].uv / vertices_projected[i + 1].position.z) * cross3 +
-							(vertices_projected[i + 2].uv / vertices_projected[i + 2].position.z) * cross1) * Zinterpolated;
+						if (Winterpolated < m_pDepthBufferPixels[px + (py * m_Width)])
+						{
+							m_pDepthBufferPixels[px + (py * m_Width)] = Winterpolated;
 
-						ColorRGB textureColor = texture->Sample(uv);
+							Vector2 uv = ((vertices_projected[i].uv / vertices_projected[i].position.z) * cross2 +
+								(vertices_projected[i + 1].uv / vertices_projected[i + 1].position.z) * cross3 +
+								(vertices_projected[i + 2].uv / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
 
-						finalColor = textureColor * (ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } *cross2 + ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } *cross3 + ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } *cross1);
+							ColorRGB textureColor = texture->Sample(uv);
 
-						finalColor.MaxToOne();
+							finalColor = textureColor * (ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } *cross2 + ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } *cross3 + ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } *cross1);
 
-						m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
-							static_cast<uint8_t>(finalColor.r * 255),
-							static_cast<uint8_t>(finalColor.g * 255),
-							static_cast<uint8_t>(finalColor.b * 255));
+							finalColor.MaxToOne();
+
+							m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
+								static_cast<uint8_t>(finalColor.r * 255),
+								static_cast<uint8_t>(finalColor.g * 255),
+								static_cast<uint8_t>(finalColor.b * 255));
+						}
+
+						
 					}
 				}
 			}

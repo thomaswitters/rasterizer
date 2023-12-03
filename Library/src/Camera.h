@@ -98,7 +98,7 @@ namespace dae
 			//Keyboard Input
 			const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
 
-			float movementSpeed{ 6.f };
+			float movementSpeed{ 12.f };
 			//Mouse Input
 
 			int mouseX{}, mouseY{};
