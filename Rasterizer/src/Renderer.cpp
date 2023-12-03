@@ -23,9 +23,26 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	m_pDepthBufferPixels = new float[m_Width * m_Height];
 	//Initialize Camera
-	m_Camera.Initialize(60.f, { .0f,.0f,-10.f });
+	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
+	m_Camera.Initialize(60.f, { .0f, 10.0f, -60.f });
 
-	texture = Texture::LoadFromFile("Resources/uv_grid_2.png");
+	//texture = Texture::LoadFromFile("Resources/uv_grid_2.png");
+	texture = Texture::LoadFromFile("Resources/tuktuk.png");
+
+	
+	meshes3 = std::vector<Mesh>
+	{
+		Mesh{
+				{
+			},
+				{
+				
+			},
+			PrimitiveTopology::TriangleList
+		}
+	};
+	Utils::ParseOBJ("Resources/tuktuk.obj", meshes3[0].vertices, meshes3[0].indices);
+	
 }
 
 Renderer::~Renderer()
@@ -37,6 +54,9 @@ Renderer::~Renderer()
 void Renderer::Update(Timer* pTimer)
 {
 	m_Camera.Update(pTimer);
+
+	const float deltaTime = pTimer->GetElapsed();
+	draai += deltaTime;
 }
 
 void Renderer::Render()
@@ -54,6 +74,7 @@ void Renderer::Render()
 	//Render_W2_Part1();
 	//Render_W2_Part2();
 	Render_W3();
+	//Render_W3_Part2();
 	
 		
 
@@ -84,34 +105,40 @@ void Renderer::VertexTransformationFunction(const std::vector<Vertex>& vertices_
 		vertices_out.emplace_back(Vertex{ transformedVertex , vertexIn.color, vertexIn.uv });
 	}
 }
-void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Vertex>& vertices_out) const
+// W6 description: "Textual recap : transforming a 3D point to NDC requires the following steps"
+void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Vertex>& vertices_out) const 
 {
+	// TODO: shouldn't we initialise an aspectRatio in the constructor and store it in the object Renderer, instead of recalculating constantly?
 	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
 	vertices_out.clear();
 
-	Matrix WorldViewProjectionMatrix = m_Camera.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
+
 
 	for (const auto& mesh : mesh_in)
 	{
-		for (const auto& mesh_index: mesh.indices)
+		for (const auto& mesh_index : mesh.indices)
 		{
 			const auto& vertexIn = mesh.vertices[mesh_index];
 
-			//Vector4 homogeneousVertex = WorldViewProjectionMatrix.TransformPoint(Vector4(vertexIn.position, 0.0f));
+			Vertex transformedVertex = vertexIn;
 
-			Vector3 transformedVertex = m_Camera.viewMatrix.TransformPoint(vertexIn.position);
+			Matrix translationTransform = Matrix::CreateTranslation(vertexIn.position);
+			Matrix rotationTransform = Matrix::CreateRotationY(draai);
+			Matrix scaleTransform = Matrix::CreateScale(1.f, 1.f, 1.f);
 
-			// Perform perspective divide.
-			transformedVertex.x /= transformedVertex.z;
-			transformedVertex.y /= transformedVertex.z;
+			Matrix worldMatrix = translationTransform * rotationTransform * scaleTransform;
+			Matrix WorldViewProjectionMatrix = worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
 
-			/*homogeneousVertex.x /= homogeneousVertex.w;
+			Vector4 homogeneousVertex = WorldViewProjectionMatrix.TransformPoint(Vector4(vertexIn.position, 1.f));
+
+
+			homogeneousVertex.x /= homogeneousVertex.w;
 			homogeneousVertex.y /= homogeneousVertex.w;
 			homogeneousVertex.z /= homogeneousVertex.w;
-			homogeneousVertex.w /= homogeneousVertex.w;*/
+			homogeneousVertex.w = homogeneousVertex.w;
 
-			transformedVertex.x /= aspectRatio * m_Camera.fov;
-			transformedVertex.y /= m_Camera.fov;
+
+
 
 			/*Matrix homogeneousVertex = Matrix{
 				{1 / aspectRatio * m_Camera.fov, 0, 0, 0},
@@ -120,15 +147,59 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 				{0, 0, 0, 0}
 			};*/
 
-			//vertices_out.emplace_back(Vertex{ homogeneousVertex, vertexIn.color, vertexIn.uv });
-			vertices_out.emplace_back(Vertex{ transformedVertex, vertexIn.color, vertexIn.uv });
+			/*Vector3 transformedVertex = m_Camera.viewMatrix.TransformPoint(vertexIn.position);
+
+			transformedVertex.x /= transformedVertex.z;
+			transformedVertex.y /= transformedVertex.z;
+
+			transformedVertex.x /= aspectRatio * m_Camera.fov;
+			transformedVertex.y /= m_Camera.fov;
+
+			vertices_out.emplace_back(Vertex{ transformedVertex, vertexIn.color, vertexIn.uv });*/
+			vertices_out.emplace_back(Vertex{ homogeneousVertex, vertexIn.color, vertexIn.uv });
+		}
+	}
+}
+void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Vertex_Out>& vertices_out) const
+{
+
+
+	// TODO: shouldn't we initialise an aspectRatio in the constructor and store it in the object Renderer, instead of recalculating constantly?
+	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
+	vertices_out.clear();
+
+
+
+	for (const auto& mesh : mesh_in)
+	{
+		for (const auto& mesh_index : mesh.indices)
+		{
+			const auto& vertexIn = mesh.vertices[mesh_index];
+
+			Vertex transformedVertex = vertexIn;
+
+			Matrix translationTransform = Matrix::CreateTranslation(vertexIn.position);
+			Matrix rotationTransform = Matrix::CreateRotationY(draai);
+			Matrix scaleTransform = Matrix::CreateScale(1.f, 1.f, 1.f);
+
+			Matrix worldMatrix = translationTransform * rotationTransform * scaleTransform;
+			Matrix WorldViewProjectionMatrix = worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
+
+			Vector4 homogeneousVertex = WorldViewProjectionMatrix.TransformPoint(Vector4(vertexIn.position, 1.f));
+
+
+			homogeneousVertex.x /= homogeneousVertex.w;
+			homogeneousVertex.y /= homogeneousVertex.w;
+			homogeneousVertex.z /= homogeneousVertex.w;
+			homogeneousVertex.w = homogeneousVertex.w;
+
+			vertices_out.emplace_back(Vertex_Out{ homogeneousVertex, vertexIn.color, vertexIn.uv });
 		}
 	}
 }
 
-void Renderer::Render_W3()
+void Renderer::Render_W3_Part2()
 {
-
 	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
 	SDL_FillRect(m_pBackBuffer, nullptr, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 
@@ -180,9 +251,11 @@ void Renderer::Render_W3()
 
 
 	// decide which one to use
-	std::vector<Mesh> meshes = meshes2;
+	std::vector<Mesh> meshes = meshes3;
 
-	std::vector<Vertex> vertices_projected;
+	//std::vector<Vertex> vertices_projected;
+	std::vector<Vertex_Out> vertices_projected; 
+
 	VertexTransformationFunction(meshes, vertices_projected);
 
 
@@ -198,10 +271,6 @@ void Renderer::Render_W3()
 			Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
 
 			//TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
-			/*if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip && i % 2 != 0)
-			{
-				std::swap(v1, v2);
-			}*/
 
 			//vertices_projected[i].position.x
 
@@ -237,7 +306,7 @@ void Renderer::Render_W3()
 						float Zinterpolated = 1.0f / ((1 / vertices_projected[i].position.z) * cross2 +
 							(1 / vertices_projected[i + 1].position.z) * cross3 +
 							(1 / vertices_projected[i + 2].position.z) * cross1);
-
+						
 						m_pDepthBufferPixels[px + (py * m_Width)] = Zinterpolated;
 
 						Vector2 uv = ((vertices_projected[i].uv / vertices_projected[i].position.z) * cross2 +
@@ -260,7 +329,137 @@ void Renderer::Render_W3()
 		}
 	}
 }
+void Renderer::Render_W3()
+{
+	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
+	SDL_FillRect(m_pBackBuffer, nullptr, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 
+	std::vector<Mesh> meshes1
+	{
+		Mesh{
+			{
+				Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
+				Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
+				Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
+				Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
+				Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
+				Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
+				Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
+				Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
+				Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
+			},
+				{
+				3, 0, 4, 1, 5, 2,
+				2, 6,
+				6, 3, 7, 4, 8, 5
+			},
+			PrimitiveTopology::TriangleStrip
+		}
+	};
+	std::vector<Mesh> meshes2
+	{
+		Mesh{
+				{
+				Vertex{{-3, 3, -2}, {1.f,1.f,1.f}, {0.f, 0.f}},
+				Vertex{{0, 3, -2}, {1.f,1.f,1.f}, {0.5f, 0.f}},
+				Vertex{{3, 3, -2}, {1.f,1.f,1.f}, {1.f, 0.f}},
+				Vertex{{-3, 0, -2}, {1.f,1.f,1.f}, {0.f, 0.5f}},
+				Vertex{{0, 0, -2}, {1.f,1.f,1.f}, {0.5f, 0.5f}},
+				Vertex{{3, 0, -2}, {1.f,1.f,1.f}, {1.f, 0.5f}},
+				Vertex{{-3, -3, -2}, {1.f,1.f,1.f}, {0.f, 1.f}},
+				Vertex{{0, -3, -2}, {1.f,1.f,1.f}, {0.5f, 1.f}},
+				Vertex{{3, -3, -2}, {1.f,1.f,1.f}, {1.f, 1.f}}
+			},
+				{
+				3, 0, 1,	1, 4, 3,	4, 1, 2,
+				2, 5, 4,	6, 3, 4,	4, 7, 6,
+				7, 4, 5,	5, 8, 7
+
+			},
+			PrimitiveTopology::TriangleList
+		}
+	};
+
+
+	// decide which one to use
+	std::vector<Mesh> meshes = meshes3;
+
+	//std::vector<Vertex> vertices_projected;
+	std::vector<Vertex> vertices_projected;
+
+	VertexTransformationFunction(meshes, vertices_projected);
+
+
+	for (auto mesh : meshes) {
+		PrimitiveTopology method = mesh.primitiveTopology;
+		int step = (method == PrimitiveTopology::TriangleList) ? 3 : 1;
+		int sizeDecrease = std::abs(step - 3); // for TriangleString I've noticed I need decrease looping over the vertices_projected.size by 2
+
+		for (size_t i = 0; i < vertices_projected.size() - sizeDecrease; i += step)
+		{
+			Vector2 v0(((vertices_projected[i].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i].position.y) / 2) * m_Height);
+			Vector2 v1(((vertices_projected[i + 1].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 1].position.y) / 2) * m_Height);
+			Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
+
+			//TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
+
+			//vertices_projected[i].position.x
+
+			int min_x = static_cast<int>(std::min({ v0.x, v1.x, v2.x }));
+			int min_y = static_cast<int>(std::min({ v0.y, v1.y, v2.y }));
+			int max_x = static_cast<int>(std::max({ v0.x, v1.x, v2.x }));
+			int max_y = static_cast<int>(std::max({ v0.y, v1.y, v2.y }));
+
+			min_x = std::max(0, std::min(min_x, m_Width - 1));
+			min_y = std::max(0, std::min(min_y, m_Height - 1));
+			max_x = std::max(0, std::min(max_x, m_Width - 1));
+			max_y = std::max(0, std::min(max_y, m_Height - 1));
+
+			for (int px = min_x; px <= max_x; ++px)
+			{
+				for (int py = min_y; py <= max_y; ++py)
+				{
+					Vector2 point(px + 0.5f, py + 0.5f);
+
+					ColorRGB finalColor{ 0, 0, 0 };
+
+					float cross1 = Vector2::Cross(v1 - v0, point - v0);
+					float cross2 = Vector2::Cross(v2 - v1, point - v1);
+					float cross3 = Vector2::Cross(v0 - v2, point - v2);
+					float total = cross1 + cross2 + cross3;
+
+					cross1 /= total;
+					cross2 /= total;
+					cross3 /= total;
+
+					if ((cross1 >= 0.0f) == (cross2 >= 0.0f) && (cross2 >= 0.0f) == (cross3 >= 0.0f))
+					{
+						float Zinterpolated = 1.0f / ((1 / vertices_projected[i].position.z) * cross2 +
+							(1 / vertices_projected[i + 1].position.z) * cross3 +
+							(1 / vertices_projected[i + 2].position.z) * cross1);
+						
+						m_pDepthBufferPixels[px + (py * m_Width)] = Zinterpolated;
+
+						Vector2 uv = ((vertices_projected[i].uv / vertices_projected[i].position.z) * cross2 +
+							(vertices_projected[i + 1].uv / vertices_projected[i + 1].position.z) * cross3 +
+							(vertices_projected[i + 2].uv / vertices_projected[i + 2].position.z) * cross1) * Zinterpolated;
+
+						ColorRGB textureColor = texture->Sample(uv);
+
+						finalColor = textureColor * (ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } *cross2 + ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } *cross3 + ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } *cross1);
+
+						finalColor.MaxToOne();
+
+						m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
+							static_cast<uint8_t>(finalColor.r * 255),
+							static_cast<uint8_t>(finalColor.g * 255),
+							static_cast<uint8_t>(finalColor.b * 255));
+					}
+				}
+			}
+		}
+	}
+}
 
 void Renderer::Render_W2_Part2()
 {

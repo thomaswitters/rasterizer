@@ -10,6 +10,7 @@ namespace dae
 {
 	struct Camera
 	{
+		// todo: is this the best way to have to aspectRatio?
 		Camera() = default;
 
 		Camera(const Vector3& _origin, float _fovAngle):
@@ -33,9 +34,6 @@ namespace dae
 		Matrix viewMatrix{};
 
 		Matrix projectionMatrix{};
-		
-		Vector3 scale{ 1.0f, 1.0f, 1.0f };
-		Matrix worldMatrix{};
 
 
 
@@ -57,6 +55,7 @@ namespace dae
 			//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixlookatlh
 
 			viewMatrix = Matrix::CreateLookAtLH(origin, forward, up);
+			//invViewMatrix = Matrix::Inverse(viewMatrix);
 		}
 
 		void CalculateProjectionMatrix()
@@ -65,7 +64,7 @@ namespace dae
 			//ProjectionMatrix => Matrix::CreatePerspectiveFovLH(...) [not implemented yet]
 			//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixperspectivefovlh
 
-			float aspect = static_cast<float>(800.f) / static_cast<float>(800.f);
+			float aspect = static_cast<float>(200.f) / static_cast<float>(200.f);
 
 			float zn = 1.0f;
 			float zf = 1000.0f;
@@ -89,7 +88,10 @@ namespace dae
 
 			/*Vector3 localUp = Vector3::Cross(forward, localRight);
 			localUp.Normalized();*/
-			worldMatrix = Matrix::CreateTranslation(origin);
+
+			//Matrix finalTransform = scaleTransform * rotationTransform * translationTransform;
+			//worldMatrix = finalTransform;
+
 
 			const float deltaTime = pTimer->GetElapsed();
 
