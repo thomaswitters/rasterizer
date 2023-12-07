@@ -53,6 +53,7 @@ namespace dae
 		void Render_W3_Part2();
 
 		void Render_W4();
+		void PixelShading(const Vertex_Out& v);
 
 		float Remap(float value, float oldMin, float oldMax);
 
@@ -77,7 +78,10 @@ namespace dae
 
 		Texture* textureUvGrid;
 		Texture* textureTukTuk;
-		Texture* textureVehicle;
+		Texture* textureVehicleDiffuse;
+		Texture* textureVehicleNormal;
+		Texture* textureVehicleGloss;
+		Texture* textureVehicleSpecular;
 
 		std::vector<Mesh> tuktuk;
 		std::vector<Mesh> vehicle;
@@ -85,5 +89,15 @@ namespace dae
 		float draai;
 
 		bool renderFinalColor = true;
+
+		ColorRGB finalColorFinal;
+
+		ColorRGB textureColorDiffuse;
+		ColorRGB textureColorNormal;
+		ColorRGB textureColorGloss;
+		ColorRGB textureColorSpecular;
+
+		Vector3 normals;
+		Vector3 tangent;
 	};
 }

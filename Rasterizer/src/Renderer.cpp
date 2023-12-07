@@ -24,11 +24,18 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pDepthBufferPixels = new float[m_Width * m_Height];
 	//Initialize Camera
 	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-	m_Camera.Initialize(60.f, { .0f, 0.0f, -100.f });
+	m_Camera.Initialize(60.f, { .0f, 0.0f, -110.f });
 
 	textureUvGrid = Texture::LoadFromFile("Resources/uv_grid_2.png");
 	textureTukTuk = Texture::LoadFromFile("Resources/tuktuk.png");
+
+	textureVehicleDiffuse = Texture::LoadFromFile("Resources/vehicle_diffuse.png");
+	textureVehicleNormal = Texture::LoadFromFile("Resources/vehicle_normal.png");
+	textureVehicleGloss = Texture::LoadFromFile("Resources/vehicle_gloss.png");
+	textureVehicleSpecular = Texture::LoadFromFile("Resources/vehicle_specular.png");
 	
+
+
 	tuktuk = std::vector<Mesh>
 	{
 		Mesh{
@@ -60,7 +67,14 @@ Renderer::Renderer(SDL_Window* pWindow) :
 Renderer::~Renderer()
 {
 	delete[] m_pDepthBufferPixels;
+
+	delete textureUvGrid;
 	delete textureTukTuk;
+
+	delete textureVehicleDiffuse;
+	delete textureVehicleNormal;
+	delete textureVehicleGloss;
+	delete textureVehicleSpecular;
 }
 
 void Renderer::Update(Timer* pTimer)
@@ -175,13 +189,9 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 }
 void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Vertex_Out>& vertices_out) const
 {
-
-
 	// TODO: shouldn't we initialise an aspectRatio in the constructor and store it in the object Renderer, instead of recalculating constantly?
 	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
 	vertices_out.clear();
-
-
 
 	for (const auto& mesh : mesh_in)
 	{
@@ -193,7 +203,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 
 			Matrix translationTransform = Matrix::CreateTranslation(vertexIn.position);
 			Matrix rotationTransform = Matrix::CreateRotationY(draai);
-			Matrix scaleTransform = Matrix::CreateScale(1.0f, 1.f, 1.f);
+			Matrix scaleTransform = Matrix::CreateScale(1.f, 1.f, 1.f);
 
 			Matrix worldMatrix = translationTransform * rotationTransform * scaleTransform;
 			Matrix WorldViewProjectionMatrix = worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
@@ -206,13 +216,63 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 			homogeneousVertex.z /= homogeneousVertex.w;
 			homogeneousVertex.w = homogeneousVertex.z;
 
-			vertices_out.emplace_back(Vertex_Out{ homogeneousVertex, vertexIn.color, vertexIn.uv });
+
+			Vector3 transformedNormal = worldMatrix.TransformVector(vertexIn.normal);
+			
+			Vector3 transformedTangent = worldMatrix.TransformVector(vertexIn.tangent);
+
+			//Vector3 Normal = transformedTangent * textureColorNormal;
+
+
+			vertices_out.emplace_back(Vertex_Out{ homogeneousVertex, vertexIn.color, vertexIn.uv, transformedNormal, transformedTangent});
 		}
 	}
 }
+void Renderer::PixelShading(const Vertex_Out& v)
+{	
+	//Vector3 normalMap = Vector3(textureColorNormal.r, textureColorNormal.g, textureColorNormal.b);
+	////normalMap /= 255;
+	//normalMap = 2.0f * normalMap - Vector3(1.0f, 1.0f, 1.0f);
 
+
+	//Vector3 binormal = Vector3::Cross(normals, tangent);
+	//Vector3 zero = Vector3{ 0.f,0.f,0.f };
+	//Matrix tangentSpaceAxis = Matrix{ tangent, binormal, normals, zero };
+
+	//Vector3 tangentSpaceNormal = tangentSpaceAxis.TransformVector(normalMap);
+
+
+
+	Vector3 lightDirection = { 0.577f, -0.577f, 0.577f };
+	lightDirection.Normalize();
+
+	// Lambert's cosine law for diffuse reflection
+	float lambert = Vector3::Dot(normals, -lightDirection);
+
+	/*ColorRGB m_DiffuseColor{ textureColorDiffuse };
+	float m_DiffuseReflectance{ 1.f };
+	float LightIntensity{ 7.f };
+
+	ColorRGB result;
+	result.r = m_DiffuseReflectance * (m_DiffuseColor.r / PI);
+	result.g = m_DiffuseReflectance * (m_DiffuseColor.g / PI);
+	result.b = m_DiffuseReflectance * (m_DiffuseColor.b / PI);
+
+	result.r *= lambert * LightIntensity;
+	result.g *= lambert * LightIntensity;
+	result.b *= lambert * LightIntensity;*/
+	
+	if (lambert > 0)
+	{
+		//finalColorFinal = ColorRGB(result.r, result.g, result.b);
+		finalColorFinal = ColorRGB(lambert, lambert, lambert);
+	}
+	
+
+}
 void Renderer::Render_W4()
 {
+	
 	std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, std::numeric_limits<float>::max());
 	SDL_FillRect(m_pBackBuffer, nullptr, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 
@@ -243,18 +303,20 @@ void Renderer::Render_W4()
 			max_x = std::max(0, std::min(max_x, m_Width - 1));
 			max_y = std::max(0, std::min(max_y, m_Height - 1));
 
+			
+
 			for (int px = min_x; px <= max_x; ++px)
 			{
 				for (int py = min_y; py <= max_y; ++py)
 				{
 					Vector2 point(px + 0.5f, py + 0.5f);
 
-					ColorRGB finalColor{ 0, 0, 0 };
-
 					float cross1 = Vector2::Cross(v1 - v0, point - v0);
 					float cross2 = Vector2::Cross(v2 - v1, point - v1);
 					float cross3 = Vector2::Cross(v0 - v2, point - v2);
 					float total = cross1 + cross2 + cross3;
+
+					
 
 					cross1 /= total;
 					cross2 /= total;
@@ -267,45 +329,81 @@ void Renderer::Render_W4()
 							(1 / vertices_projected[i + 1].position.w) * cross3 +
 							(1 / vertices_projected[i + 2].position.w) * cross1);
 
-						Winterpolated = std::max(0.0f, std::min(1.0f, Winterpolated));
+						//Winterpolated = std::max(0.0f, std::min(1.0f, Winterpolated));
 
 						if (Winterpolated < m_pDepthBufferPixels[px + (py * m_Width)])
 						{
 							m_pDepthBufferPixels[px + (py * m_Width)] = Winterpolated;
 
 							float depthValue = m_pDepthBufferPixels[px + (py * m_Width)];
-
 							float remappedDepth = Remap(depthValue, 0.985f, 1.0f);
+
+							bool clipTriangle = false;
+							for (int j = 0; j < step; ++j) {
+								if (vertices_projected[i + j].position.x < -depthValue || vertices_projected[i + j].position.x > depthValue ||
+									vertices_projected[i + j].position.y < -depthValue || vertices_projected[i + j].position.y > depthValue ||
+									vertices_projected[i + j].position.z < 0.0f) {
+									clipTriangle = true;
+									break;
+								}
+							}
+							if (clipTriangle) {
+								// Skip rendering this triangle as it's outside the frustum
+								continue;
+							}
 
 							Vector2 uv = ((vertices_projected[i].uv / vertices_projected[i].position.z) * cross2 +
 								(vertices_projected[i + 1].uv / vertices_projected[i + 1].position.z) * cross3 +
 								(vertices_projected[i + 2].uv / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
 
-							ColorRGB textureColor = textureTukTuk->Sample(uv);
+							
+							normals = ((vertices_projected[i].normal / vertices_projected[i].position.z) * cross2) +
+								((vertices_projected[i + 1].normal / vertices_projected[i + 1].position.z) * cross3) +
+								((vertices_projected[i + 2].normal / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
 
-							if (renderFinalColor)
-							{
-								finalColor = textureColor * (ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } *cross2 + ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } *cross3 + ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } *cross1);
-							}
-							else
-							{
-								finalColor = ColorRGB(remappedDepth, remappedDepth, remappedDepth);
-							}
 
-							finalColor.MaxToOne();
+							tangent = ((vertices_projected[i].tangent / vertices_projected[i].position.z) * cross2) +
+								((vertices_projected[i + 1].tangent / vertices_projected[i + 1].position.z) * cross3) +
+								((vertices_projected[i + 2].tangent / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
+
+							
+							
+							textureColorDiffuse = textureVehicleDiffuse->Sample(uv);
+							textureColorNormal = textureVehicleNormal->Sample(uv);
+							//textureColorGloss = textureVehicleGloss->Sample(uv);
+							//textureColorSpecular = textureVehicleSpecular->Sample(uv);
+
+
+							PixelShading(vertices_projected[i]);
+							
+							
+
+							//if (renderFinalColor)
+							//{
+							//	finalColorFinal = textureColorDiffuse /** textureColorNormal*/;
+							//}
+							//else
+							//{
+							//	finalColorFinal = ColorRGB(remappedDepth, remappedDepth, remappedDepth);
+							//}
+							finalColorFinal.MaxToOne();
 
 							m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
-								static_cast<uint8_t>(finalColor.r * 255),
-								static_cast<uint8_t>(finalColor.g * 255),
-								static_cast<uint8_t>(finalColor.b * 255));
+								static_cast<uint8_t>(finalColorFinal.r * 255),
+								static_cast<uint8_t>(finalColorFinal.g * 255),
+								static_cast<uint8_t>(finalColorFinal.b * 255));
 						}
-
-
+						
+						
 					}
+					
 				}
 			}
+			
 		}
 	}
+	
+
 }
 
 float Renderer::Remap(float value, float oldMin, float oldMax)
@@ -326,7 +424,7 @@ void Renderer::Render_W3_Part2()
 
 	VertexTransformationFunction(meshes, vertices_projected);
 
-
+	
 	for (auto mesh : meshes) {
 		PrimitiveTopology method = mesh.primitiveTopology;
 		int step = (method == PrimitiveTopology::TriangleList) ? 3 : 1;
@@ -339,7 +437,10 @@ void Renderer::Render_W3_Part2()
 			Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
 
 			//TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
-
+			if (method == PrimitiveTopology::TriangleStrip && i % 2 != 0)
+			{
+				std::swap(v1, v2);
+			}
 			//vertices_projected[i].position.x
 
 			int min_x = static_cast<int>(std::min({ v0.x, v1.x, v2.x }));
@@ -351,6 +452,8 @@ void Renderer::Render_W3_Part2()
 			min_y = std::max(0, std::min(min_y, m_Height - 1));
 			max_x = std::max(0, std::min(max_x, m_Width - 1));
 			max_y = std::max(0, std::min(max_y, m_Height - 1));
+
+			
 
 			for (int px = min_x; px <= max_x; ++px)
 			{
@@ -365,6 +468,8 @@ void Renderer::Render_W3_Part2()
 					float cross3 = Vector2::Cross(v0 - v2, point - v2);
 					float total = cross1 + cross2 + cross3;
 
+					
+
 					cross1 /= total;
 					cross2 /= total;
 					cross3 /= total;
@@ -378,19 +483,36 @@ void Renderer::Render_W3_Part2()
 						
 						Winterpolated = std::max(0.0f, std::min(1.0f, Winterpolated));
 
+						
+						//Optional: we do not render a triangle as soon as one vertex is outside the frustum.
+						//• But what about triangles that are partially in the frustum ?
 						if (Winterpolated < m_pDepthBufferPixels[px + (py * m_Width)])
 						{
 							m_pDepthBufferPixels[px + (py * m_Width)] = Winterpolated;
 
-							float depthValue = m_pDepthBufferPixels[px + (py * m_Width)];
-
+							float depthValue = m_pDepthBufferPixels[px + (py * m_Width)]; // this is the frustum
 							float remappedDepth = Remap(depthValue, 0.985f, 1.0f);
+
+
+							bool clipTriangle = false;
+							for (int j = 0; j < step; ++j) {
+								if (vertices_projected[i + j].position.x < -depthValue || vertices_projected[i + j].position.x > depthValue ||
+									vertices_projected[i + j].position.y < -depthValue || vertices_projected[i + j].position.y > depthValue ||
+									vertices_projected[i + j].position.z < 0.0f) {
+									clipTriangle = true;
+									break;
+								}
+							}
+							if (clipTriangle) {
+								// Skip rendering this triangle as it's outside the frustum
+								continue;
+							}
 
 							Vector2 uv = ((vertices_projected[i].uv / vertices_projected[i].position.z) * cross2 +
 								(vertices_projected[i + 1].uv / vertices_projected[i + 1].position.z) * cross3 +
 								(vertices_projected[i + 2].uv / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
 
-							ColorRGB textureColor = textureUvGrid->Sample(uv);
+							ColorRGB textureColor = textureTukTuk->Sample(uv);
 
 							if (renderFinalColor)
 							{
