@@ -64,7 +64,7 @@ namespace dae
 			//ProjectionMatrix => Matrix::CreatePerspectiveFovLH(...) [not implemented yet]
 			//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixperspectivefovlh
 
-			float aspect = static_cast<float>(200.f) / static_cast<float>(200.f);
+			float aspect = static_cast<float>(640) / static_cast<float>(480);
 
 			float zn = 1.0f;
 			float zf = 1000.0f;

@@ -24,7 +24,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pDepthBufferPixels = new float[m_Width * m_Height];
 	//Initialize Camera
 	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-	m_Camera.Initialize(60.f, { .0f, 0.0f, -110.f });
+	m_Camera.Initialize(60.f, { .0f, 0.0f, -170.f });
 
 	textureUvGrid = Texture::LoadFromFile("Resources/uv_grid_2.png");
 	textureTukTuk = Texture::LoadFromFile("Resources/tuktuk.png");
@@ -230,16 +230,17 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 }
 void Renderer::PixelShading(const Vertex_Out& v)
 {	
-	//Vector3 normalMap = Vector3(textureColorNormal.r, textureColorNormal.g, textureColorNormal.b);
-	////normalMap /= 255;
-	//normalMap = 2.0f * normalMap - Vector3(1.0f, 1.0f, 1.0f);
+	Vector3 normalMap = Vector3(textureColorNormal.r, textureColorNormal.g, textureColorNormal.b);
+	
+	//normalMap /= 255;
+	normalMap = 2.0f * normalMap - Vector3(1.0f, 1.0f, 1.0f);
 
 
-	//Vector3 binormal = Vector3::Cross(normals, tangent);
-	//Vector3 zero = Vector3{ 0.f,0.f,0.f };
-	//Matrix tangentSpaceAxis = Matrix{ tangent, binormal, normals, zero };
+	Vector3 binormal = Vector3::Cross(normals, tangent);
+	Vector3 zero = Vector3{ 0.f,0.f,0.f };
+	Matrix tangentSpaceAxis = Matrix{ tangent, binormal, normals, zero };
 
-	//Vector3 tangentSpaceNormal = tangentSpaceAxis.TransformVector(normalMap);
+	Vector3 tangentSpaceNormal = tangentSpaceAxis.TransformVector(normalMap);
 
 
 
@@ -247,25 +248,64 @@ void Renderer::PixelShading(const Vertex_Out& v)
 	lightDirection.Normalize();
 
 	// Lambert's cosine law for diffuse reflection
-	float lambert = Vector3::Dot(normals, -lightDirection);
+	float lambert = Vector3::Dot(tangentSpaceNormal, -lightDirection);
 
-	/*ColorRGB m_DiffuseColor{ textureColorDiffuse };
+	ColorRGB m_DiffuseColor{ textureColorDiffuse };
 	float m_DiffuseReflectance{ 1.f };
 	float LightIntensity{ 7.f };
 
-	ColorRGB result;
-	result.r = m_DiffuseReflectance * (m_DiffuseColor.r / PI);
-	result.g = m_DiffuseReflectance * (m_DiffuseColor.g / PI);
-	result.b = m_DiffuseReflectance * (m_DiffuseColor.b / PI);
+	//lambert
+	ColorRGB lambertDiffuseReflection;
+	lambertDiffuseReflection.r = m_DiffuseReflectance * (m_DiffuseColor.r / PI);
+	lambertDiffuseReflection.g = m_DiffuseReflectance * (m_DiffuseColor.g / PI);
+	lambertDiffuseReflection.b = m_DiffuseReflectance * (m_DiffuseColor.b / PI);
 
-	result.r *= lambert * LightIntensity;
-	result.g *= lambert * LightIntensity;
-	result.b *= lambert * LightIntensity;*/
+	lambertDiffuseReflection.r *= lambert * LightIntensity;
+	lambertDiffuseReflection.g *= lambert * LightIntensity;
+	lambertDiffuseReflection.b *= lambert * LightIntensity;
+
+
+	//phong
+	ColorRGB m_SpecularColor{ textureColorSpecular };
 	
+	ColorRGB m_GlossColor{ textureColorGloss };
+	float m_PhongExponent{ textureColorGloss.r };
+	float shininess{ 25.f };
+
+	Vector3 reflection = Vector3::Reflect(-lightDirection, normals);
+	reflection.Normalize();
+
+	float dotRV = Vector3::Dot(reflection, lightDirection);
+
+	m_PhongExponent = m_PhongExponent * shininess;
+
+	ColorRGB phongSpecularReflection;
+
+	if (dotRV > 0)
+	{
+		phongSpecularReflection = m_SpecularColor * std::pow(dotRV, m_PhongExponent);
+	}
+	else
+	{
+		phongSpecularReflection = ColorRGB(0.0f, 0.0f, 0.0f);
+	}
+
+	//lambert + phong
+	ColorRGB finalColor;
+	finalColor = lambertDiffuseReflection + phongSpecularReflection;
+
+	
+
 	if (lambert > 0)
 	{
-		//finalColorFinal = ColorRGB(result.r, result.g, result.b);
-		finalColorFinal = ColorRGB(lambert, lambert, lambert);
+		//finalColorFinal = lambertDiffuseReflection;
+		finalColorFinal = phongSpecularReflection;
+		//finalColorFinal = finalColor;
+		//finalColorFinal = ColorRGB(lambert, lambert, lambert);
+	}
+	else
+	{
+		finalColorFinal = ColorRGB(0.f, 0.f, 0.f);
 	}
 	
 
@@ -282,10 +322,10 @@ void Renderer::Render_W4()
 
 	VertexTransformationFunction(meshes, vertices_projected);
 
-	for (auto mesh : meshes) {
+	for (auto& mesh : meshes) {
 		PrimitiveTopology method = mesh.primitiveTopology;
 		int step = (method == PrimitiveTopology::TriangleList) ? 3 : 1;
-		int sizeDecrease = std::abs(step - 3); // for TriangleString I've noticed I need decrease looping over the vertices_projected.size by 2
+		int sizeDecrease = std::abs(step - 3); // for TriangleStrip I've noticed I need decrease looping over the vertices_projected.size by 2
 
 		for (size_t i = 0; i < vertices_projected.size() - sizeDecrease; i += step)
 		{
@@ -360,7 +400,7 @@ void Renderer::Render_W4()
 							normals = ((vertices_projected[i].normal / vertices_projected[i].position.z) * cross2) +
 								((vertices_projected[i + 1].normal / vertices_projected[i + 1].position.z) * cross3) +
 								((vertices_projected[i + 2].normal / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
-
+							normals.Normalize();
 
 							tangent = ((vertices_projected[i].tangent / vertices_projected[i].position.z) * cross2) +
 								((vertices_projected[i + 1].tangent / vertices_projected[i + 1].position.z) * cross3) +
@@ -370,8 +410,8 @@ void Renderer::Render_W4()
 							
 							textureColorDiffuse = textureVehicleDiffuse->Sample(uv);
 							textureColorNormal = textureVehicleNormal->Sample(uv);
-							//textureColorGloss = textureVehicleGloss->Sample(uv);
-							//textureColorSpecular = textureVehicleSpecular->Sample(uv);
+							textureColorGloss = textureVehicleGloss->Sample(uv);
+							textureColorSpecular = textureVehicleSpecular->Sample(uv);
 
 
 							PixelShading(vertices_projected[i]);

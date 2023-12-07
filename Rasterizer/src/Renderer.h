@@ -62,6 +62,29 @@ namespace dae
 			renderFinalColor = !renderFinalColor;
 		}
 
+
+		void CycleLightingMode() {
+			switch (m_CurrentLightingMode)
+			{
+			case LightingMode::ObservedArea:
+				m_CurrentLightingMode = LightingMode::Radiance;
+				std::cout << " \nLIGHTING MODE: " << "RADIANCE" << std::endl;
+				break;
+			case LightingMode::Radiance:
+				m_CurrentLightingMode = LightingMode::BRDF;
+				std::cout << " \nLIGHTING MODE: " << "BRDF" << std::endl;
+				break;
+			case LightingMode::BRDF:
+				m_CurrentLightingMode = LightingMode::Combined;
+				std::cout << " \nLIGHTING MODE: " << "COMBINED" << std::endl;
+				break;
+			case LightingMode::Combined:
+				m_CurrentLightingMode = LightingMode::ObservedArea;
+				std::cout << " \nLIGHTING MODE: " << "OBSERVED AREA" << std::endl;
+				break;
+			}
+		};
+
 	private:
 		SDL_Window* m_pWindow{};
 
@@ -99,5 +122,15 @@ namespace dae
 
 		Vector3 normals;
 		Vector3 tangent;
+
+		enum class ShadingMode
+		{
+			ObservedArea,
+			Diffuse,
+			Specular,
+			Combined
+		};
+
+		ShadingMode m_CurrentLightingMode{ ShadingMode::Combined };
 	};
 }
