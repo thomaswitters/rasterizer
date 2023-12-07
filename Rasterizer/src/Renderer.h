@@ -63,27 +63,36 @@ namespace dae
 		}
 
 
-		void CycleLightingMode() {
-			switch (m_CurrentLightingMode)
+		void CycleShadingMode() {
+			switch (m_CurrentShadingMode)
 			{
-			case LightingMode::ObservedArea:
-				m_CurrentLightingMode = LightingMode::Radiance;
-				std::cout << " \nLIGHTING MODE: " << "RADIANCE" << std::endl;
+			case ShadingMode::ObservedArea:
+				m_CurrentShadingMode = ShadingMode::Diffuse;
+				std::cout << " \nShading MODE: " << "DIFFUSE" << std::endl;
 				break;
-			case LightingMode::Radiance:
-				m_CurrentLightingMode = LightingMode::BRDF;
-				std::cout << " \nLIGHTING MODE: " << "BRDF" << std::endl;
+			case ShadingMode::Diffuse:
+				m_CurrentShadingMode = ShadingMode::Specular;
+				std::cout << " \nShading MODE: " << "SPECULAR" << std::endl;
 				break;
-			case LightingMode::BRDF:
-				m_CurrentLightingMode = LightingMode::Combined;
-				std::cout << " \nLIGHTING MODE: " << "COMBINED" << std::endl;
+			case ShadingMode::Specular:
+				m_CurrentShadingMode = ShadingMode::Combined;
+				std::cout << " \nShading MODE: " << "COMBINED" << std::endl;
 				break;
-			case LightingMode::Combined:
-				m_CurrentLightingMode = LightingMode::ObservedArea;
-				std::cout << " \nLIGHTING MODE: " << "OBSERVED AREA" << std::endl;
+			case ShadingMode::Combined:
+				m_CurrentShadingMode = ShadingMode::ObservedArea;
+				std::cout << " \nShading MODE: " << "OBSERVED AREA" << std::endl;
 				break;
 			}
 		};
+
+		void ToggleRotating()
+		{
+			IsRotating = !IsRotating;
+		}
+		void ToggleNormalMap()
+		{
+			NormalMap = !NormalMap;
+		}
 
 	private:
 		SDL_Window* m_pWindow{};
@@ -109,8 +118,6 @@ namespace dae
 		std::vector<Mesh> tuktuk;
 		std::vector<Mesh> vehicle;
 
-		float draai;
-
 		bool renderFinalColor = true;
 
 		ColorRGB finalColorFinal;
@@ -131,6 +138,11 @@ namespace dae
 			Combined
 		};
 
-		ShadingMode m_CurrentLightingMode{ ShadingMode::Combined };
+		ShadingMode m_CurrentShadingMode{ ShadingMode::Combined };
+
+		bool IsRotating;
+		float rotate;
+
+		bool NormalMap;
 	};
 }

@@ -82,7 +82,11 @@ void Renderer::Update(Timer* pTimer)
 	m_Camera.Update(pTimer);
 
 	const float deltaTime = pTimer->GetElapsed();
-	draai += deltaTime;
+	if (IsRotating)
+	{
+		rotate += deltaTime;
+	}
+	
 }
 
 void Renderer::Render()
@@ -150,7 +154,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 			Vertex transformedVertex = vertexIn;
 
 			Matrix translationTransform = Matrix::CreateTranslation(vertexIn.position);
-			Matrix rotationTransform = Matrix::CreateRotationY(draai);
+			Matrix rotationTransform = Matrix::CreateRotationY(rotate);
 			Matrix scaleTransform = Matrix::CreateScale(1.f, 1.f, 1.f);
 
 			Matrix worldMatrix = translationTransform * rotationTransform * scaleTransform;
@@ -202,7 +206,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 			Vertex transformedVertex = vertexIn;
 
 			Matrix translationTransform = Matrix::CreateTranslation(vertexIn.position);
-			Matrix rotationTransform = Matrix::CreateRotationY(draai);
+			Matrix rotationTransform = Matrix::CreateRotationY(rotate);
 			Matrix scaleTransform = Matrix::CreateScale(1.f, 1.f, 1.f);
 
 			Matrix worldMatrix = translationTransform * rotationTransform * scaleTransform;
@@ -248,7 +252,17 @@ void Renderer::PixelShading(const Vertex_Out& v)
 	lightDirection.Normalize();
 
 	// Lambert's cosine law for diffuse reflection
-	float lambert = Vector3::Dot(tangentSpaceNormal, -lightDirection);
+	float lambert{};
+	if (NormalMap)
+	{
+		lambert = Vector3::Dot(tangentSpaceNormal, -lightDirection);
+	}
+	else
+	{
+		lambert = Vector3::Dot(normals, -lightDirection);
+	}
+	
+	
 
 	ColorRGB m_DiffuseColor{ textureColorDiffuse };
 	float m_DiffuseReflectance{ 1.f };
@@ -299,9 +313,24 @@ void Renderer::PixelShading(const Vertex_Out& v)
 	if (lambert > 0)
 	{
 		//finalColorFinal = lambertDiffuseReflection;
-		finalColorFinal = phongSpecularReflection;
+		
 		//finalColorFinal = finalColor;
-		//finalColorFinal = ColorRGB(lambert, lambert, lambert);
+		if (m_CurrentShadingMode == ShadingMode::ObservedArea)
+		{
+			finalColorFinal = ColorRGB(lambert, lambert, lambert);
+		}
+		else if (m_CurrentShadingMode == ShadingMode::Diffuse)
+		{
+			finalColorFinal = lambertDiffuseReflection;
+		}
+		else if (m_CurrentShadingMode == ShadingMode::Specular)
+		{
+			finalColorFinal = phongSpecularReflection;
+		}
+		else if (m_CurrentShadingMode == ShadingMode::Combined)
+		{
+			finalColorFinal = finalColor;
+		}
 	}
 	else
 	{
@@ -417,15 +446,6 @@ void Renderer::Render_W4()
 							PixelShading(vertices_projected[i]);
 							
 							
-
-							//if (renderFinalColor)
-							//{
-							//	finalColorFinal = textureColorDiffuse /** textureColorNormal*/;
-							//}
-							//else
-							//{
-							//	finalColorFinal = ColorRGB(remappedDepth, remappedDepth, remappedDepth);
-							//}
 							finalColorFinal.MaxToOne();
 
 							m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
