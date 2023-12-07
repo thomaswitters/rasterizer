@@ -129,6 +129,7 @@ namespace dae
 
 		Vector3 normals;
 		Vector3 tangent;
+		Vector3 viewDirection;
 
 		enum class ShadingMode
 		{

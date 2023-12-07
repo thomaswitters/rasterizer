@@ -24,7 +24,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pDepthBufferPixels = new float[m_Width * m_Height];
 	//Initialize Camera
 	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-	m_Camera.Initialize(60.f, { .0f, 0.0f, -170.f });
+	m_Camera.Initialize(45.f, { 0.0f, 5.0f, -164.f });
 
 	textureUvGrid = Texture::LoadFromFile("Resources/uv_grid_2.png");
 	textureTukTuk = Texture::LoadFromFile("Resources/tuktuk.png");
@@ -225,18 +225,19 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 			
 			Vector3 transformedTangent = worldMatrix.TransformVector(vertexIn.tangent);
 
-			//Vector3 Normal = transformedTangent * textureColorNormal;
+			Vector3 worldSpaceCameraPosition = m_Camera.viewMatrix.GetTranslation();
+			Vector3 viewDirection = worldSpaceCameraPosition - vertexIn.position;
+			viewDirection.Normalize();
+			
+			//Vector3 transformedViewDirection = m_Camera.viewMatrix.TransformVector(vertexIn.viewDirection);
 
-
-			vertices_out.emplace_back(Vertex_Out{ homogeneousVertex, vertexIn.color, vertexIn.uv, transformedNormal, transformedTangent});
+			vertices_out.emplace_back(Vertex_Out{ homogeneousVertex, vertexIn.color, vertexIn.uv, transformedNormal, transformedTangent, viewDirection });
 		}
 	}
 }
 void Renderer::PixelShading(const Vertex_Out& v)
 {	
 	Vector3 normalMap = Vector3(textureColorNormal.r, textureColorNormal.g, textureColorNormal.b);
-	
-	//normalMap /= 255;
 	normalMap = 2.0f * normalMap - Vector3(1.0f, 1.0f, 1.0f);
 
 
@@ -286,10 +287,10 @@ void Renderer::PixelShading(const Vertex_Out& v)
 	float m_PhongExponent{ textureColorGloss.r };
 	float shininess{ 25.f };
 
-	Vector3 reflection = Vector3::Reflect(-lightDirection, normals);
-	reflection.Normalize();
+	//Vector3 reflection = lightDirection - (2 * Vector3::Dot(normals, lightDirection)) * normals;
+	Vector3 reflection = Vector3::Reflect(lightDirection, normals);
 
-	float dotRV = Vector3::Dot(reflection, lightDirection);
+	float dotRV = Vector3::Dot(reflection, -viewDirection);
 
 	m_PhongExponent = m_PhongExponent * shininess;
 
@@ -304,9 +305,13 @@ void Renderer::PixelShading(const Vertex_Out& v)
 		phongSpecularReflection = ColorRGB(0.0f, 0.0f, 0.0f);
 	}
 
+	//ambient
+	ColorRGB ambientColor{ 0.03f, 0.03f, 0.03f };
+	ColorRGB ambientReflection = ambientColor * m_DiffuseColor;
+
 	//lambert + phong
 	ColorRGB finalColor;
-	finalColor = lambertDiffuseReflection + phongSpecularReflection;
+	finalColor = lambertDiffuseReflection + phongSpecularReflection + ambientReflection;
 
 	
 
@@ -372,7 +377,10 @@ void Renderer::Render_W4()
 			max_x = std::max(0, std::min(max_x, m_Width - 1));
 			max_y = std::max(0, std::min(max_y, m_Height - 1));
 
-			
+			/*if (method == PrimitiveTopology::TriangleStrip && i % 2 != 0)
+			{
+				std::swap(v1, v2);
+			}*/
 
 			for (int px = min_x; px <= max_x; ++px)
 			{
@@ -384,7 +392,6 @@ void Renderer::Render_W4()
 					float cross2 = Vector2::Cross(v2 - v1, point - v1);
 					float cross3 = Vector2::Cross(v0 - v2, point - v2);
 					float total = cross1 + cross2 + cross3;
-
 					
 
 					cross1 /= total;
@@ -435,6 +442,10 @@ void Renderer::Render_W4()
 								((vertices_projected[i + 1].tangent / vertices_projected[i + 1].position.z) * cross3) +
 								((vertices_projected[i + 2].tangent / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
 
+							viewDirection = ((vertices_projected[i].viewDirection / vertices_projected[i].position.z) * cross2) +
+								((vertices_projected[i + 1].viewDirection / vertices_projected[i + 1].position.z) * cross3) +
+								((vertices_projected[i + 2].viewDirection / vertices_projected[i + 2].position.z) * cross1) * Winterpolated;
+
 							
 							
 							textureColorDiffuse = textureVehicleDiffuse->Sample(uv);
@@ -443,7 +454,16 @@ void Renderer::Render_W4()
 							textureColorSpecular = textureVehicleSpecular->Sample(uv);
 
 
-							PixelShading(vertices_projected[i]);
+							
+
+							if (!renderFinalColor)
+							{
+								finalColorFinal = ColorRGB(remappedDepth, remappedDepth, remappedDepth);
+							}
+							else
+							{
+								PixelShading(vertices_projected[i]);
+							}
 							
 							
 							finalColorFinal.MaxToOne();
@@ -497,10 +517,10 @@ void Renderer::Render_W3_Part2()
 			Vector2 v2(((vertices_projected[i + 2].position.x + 1.f) / 2) * m_Width, ((1.0f - vertices_projected[i + 2].position.y) / 2) * m_Height);
 
 			//TODO: Every other triangle, which has an odd index, is counter - clockwise.To make them clockwise again, we reverse the last two vertices when reading these.
-			if (method == PrimitiveTopology::TriangleStrip && i % 2 != 0)
+			/*if (method == PrimitiveTopology::TriangleStrip && i % 2 != 0)
 			{
 				std::swap(v1, v2);
-			}
+			}*/
 			//vertices_projected[i].position.x
 
 			int min_x = static_cast<int>(std::min({ v0.x, v1.x, v2.x }));
@@ -541,7 +561,7 @@ void Renderer::Render_W3_Part2()
 							(1 / vertices_projected[i + 1].position.w) * cross3 +
 							(1 / vertices_projected[i + 2].position.w) * cross1);
 						
-						Winterpolated = std::max(0.0f, std::min(1.0f, Winterpolated));
+						//Winterpolated = std::max(0.0f, std::min(1.0f, Winterpolated));
 
 						
 						//Optional: we do not render a triangle as soon as one vertex is outside the frustum.
@@ -576,7 +596,7 @@ void Renderer::Render_W3_Part2()
 
 							if (renderFinalColor)
 							{
-								finalColor = textureColor * (ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } *cross2 + ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } *cross3 + ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } *cross1);
+								finalColor = textureColor * (ColorRGB{ vertices_projected[i].color.b, vertices_projected[i].color.g, vertices_projected[i].color.r } *cross2 + ColorRGB{ vertices_projected[i + 1].color.b, vertices_projected[i + 1].color.g, vertices_projected[i + 1].color.r } * cross3 + ColorRGB{ vertices_projected[i + 2].color.b, vertices_projected[i + 2].color.g, vertices_projected[i + 2].color.r } *cross1);
 							}
 							else
 							{

@@ -65,8 +65,9 @@ namespace dae
 			//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixperspectivefovlh
 
 			float aspect = static_cast<float>(640) / static_cast<float>(480);
+			//float aspect = 1;
 
-			float zn = 1.0f;
+			float zn = 1.f;
 			float zf = 1000.0f;
 
 			projectionMatrix = Matrix::CreatePerspectiveFovLH(fov, aspect, zn, zf);
@@ -129,7 +130,7 @@ namespace dae
 
 			if (SDL_BUTTON_LMASK == mouseState)
 			{
-				origin -= forward * float(mouseY) * deltaTime * 2.f;
+				origin -= forward * float(mouseY) * deltaTime * 10.f;
 				totalYaw += float(mouseX) * deltaTime;
 			}
 			if (SDL_BUTTON_RMASK == mouseState)
