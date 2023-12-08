@@ -24,7 +24,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pDepthBufferPixels = new float[m_Width * m_Height];
 	//Initialize Camera
 	float aspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-	m_Camera.Initialize(45.f, { 0.0f, 5.0f, -164.f });
+	m_Camera.Initialize(45.f, { 0.0f, 5.0f, -64.f });
 
 	textureUvGrid = Texture::LoadFromFile("Resources/uv_grid_2.png");
 	textureTukTuk = Texture::LoadFromFile("Resources/tuktuk.png");
@@ -66,6 +66,10 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 Renderer::~Renderer()
 {
+	/*delete m_pFrontBuffer;
+	delete m_pBackBuffer;
+	delete m_pBackBufferPixels;*/
+
 	delete[] m_pDepthBufferPixels;
 
 	delete textureUvGrid;
@@ -205,11 +209,11 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, st
 
 			Vertex transformedVertex = vertexIn;
 
-			Matrix translationTransform = Matrix::CreateTranslation(vertexIn.position);
+			Matrix translationTransform = Matrix::CreateTranslation(0.f, 0.f, 50.f);
 			Matrix rotationTransform = Matrix::CreateRotationY(rotate);
 			Matrix scaleTransform = Matrix::CreateScale(1.f, 1.f, 1.f);
 
-			Matrix worldMatrix = translationTransform * rotationTransform * scaleTransform;
+			Matrix worldMatrix = scaleTransform * rotationTransform * translationTransform;
 			Matrix WorldViewProjectionMatrix = worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
 
 			Vector4 homogeneousVertex = WorldViewProjectionMatrix.TransformPoint(Vector4(vertexIn.position, 1.f));
